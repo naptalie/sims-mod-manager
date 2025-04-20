@@ -75,11 +75,3 @@ func listMods() {
 	fmt.Println(styles.BoxStyle.Render(t.View()))
 	fmt.Printf("\nTotal: %d mods\n", len(mods))
 }
-
-var listCmd = &cobra.Command{
-	Use:   "list",
-	Short: "List all mods in your Sims 4 mods folder",
-	Run: func(cmd *cobra.Command, args []string) {
-		listMods()
-	},
-}
