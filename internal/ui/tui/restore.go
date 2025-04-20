@@ -8,9 +8,9 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	
-	"github.com/naptalie/sims4-mod-manager/internal/config"
-	"github.com/naptalie/sims4-mod-manager/internal/core"
-	"github.com/naptalie/sims4-mod-manager/internal/ui/styles"
+	"github.com/yourusername/sims4-mod-manager/internal/config"
+	"github.com/yourusername/sims4-mod-manager/internal/core"
+	"github.com/yourusername/sims4-mod-manager/internal/ui/styles"
 )
 
 // Custom message types for restore operations
@@ -140,8 +140,8 @@ func (m RestoreModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		case "esc":
 			// Return to main menu
-			mainModel := InitialModel()
-			return mainModel, mainModel.Init()
+			mainModel, cmd := NewMainModel()
+			return mainModel, cmd
 		case "enter":
 			if m.state == "select-version" {
 				// Get selected version
@@ -156,6 +156,7 @@ func (m RestoreModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 		}
+		
 		
 	case restoreVersionsLoadedMsg:
 		if msg.err != nil {
