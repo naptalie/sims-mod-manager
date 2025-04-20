@@ -9,8 +9,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/yourusername/sims4-mod-manager/internal/models"
-	"github.com/yourusername/sims4-mod-manager/internal/ui/styles"
+	"github.com/naptalie/sims4-mod-manager/internal/models"
+	"github.com/naptalie/sims4-mod-manager/internal/ui/styles"
 )
 
 // Model represents the application state for the TUI
