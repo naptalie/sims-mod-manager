@@ -434,4 +434,4 @@ func renderMain(m Model) string {
 	}
 	
 	return header + search + content + footer
-} + search + content + footer
+} 
