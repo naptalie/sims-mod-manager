@@ -1,39 +1,4 @@
-// Update handles all the standard bubble tea update things
-func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmd tea.Cmd
-	
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "ctrl+c", "q":
-			return m, tea.Quit
-		case "esc":
-			if m.State != "main" {
-				m.State = "main"
-				m.ErrorMsg = ""
-				m.SuccessMsg = ""
-				return m, cmd
-			}
-		case "b":
-			// Only respond to 'b' key in main view
-			if m.State == "main" {
-				// Get currently selected mod, if any
-				selectedItem := m.List.SelectedItem()
-				if selectedItem != nil {
-					modItem, ok := selectedItem.(ModItem)
-					if ok {
-						m.SelectedMod = modItem.mod.Name
-						// Start backup process for selected mod
-						return m, startBackup(m.SelectedMod)
-					}
-				}
-			}
-		}
-		
-	case modsLoadedMsg:
-		if msg.err != nil {
-			m.ErrorMsg = msg.err.Error()
-			package tui
+package tui
 
 import (
 	"strings"
@@ -44,8 +9,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/naptalie/sims4-mod-manager/internal/models"
-	"github.com/naptalie/sims4-mod-manager/internal/ui/styles"
+	"github.com/yourusername/sims4-mod-manager/internal/models"
+	"github.com/yourusername/sims4-mod-manager/internal/ui/styles"
 )
 
 // Model represents the application state for the TUI
@@ -117,40 +82,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.SuccessMsg = ""
 				return m, cmd
 			}
-		case "b":
-			// Only respond to 'b' key in main view
-			if m.State == "main" {
-				// Get currently selected mod, if any
-				selectedItem := m.List.SelectedItem()
-				if selectedItem != nil {
-					modItem, ok := selectedItem.(ModItem)
-					if ok {
-						m.SelectedMod = modItem.mod.Name
-						// Start backup process for selected mod
-						return m, startBackup(m.SelectedMod)
-					}
-				}
-			}
-		case "a":
-			// Backup all mods
-			if m.State == "main" {
-				m.SelectedMod = ""
-				return m, startBackup("")
-			}
-		case "r":
-			// Restore selected mod
-			if m.State == "main" {
-				// Get currently selected mod, if any
-				selectedItem := m.List.SelectedItem()
-				if selectedItem != nil {
-					modItem, ok := selectedItem.(ModItem)
-					if ok {
-						m.SelectedMod = modItem.mod.Name
-						// Start restore process for selected mod
-						return m, startRestore(m.SelectedMod)
-					}
-				}
-			}
 		}
 		
 	case modsLoadedMsg:
@@ -180,48 +111,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.List = l
 		m.State = "main"
 		return m, nil
-		
-	case backupStartMsg:
-		// Switch to backup state
-		m.State = "backing-up"
-		m.SelectedMod = msg.modName
-		
-		// Create a backup model and initialize it
-		backupModel := NewBackupModel(msg.modName)
-		return backupModel, backupModel.Init()
-		
-	case backupFinishedMsg:
-		// Handle backup completion
-		if msg.success {
-			m.SuccessMsg = msg.message
-		} else {
-			m.ErrorMsg = msg.message
-		}
-		
-		// Return to main state
-		m.State = "main"
-		return m, nil
-		
-	case restoreStartMsg:
-		// Switch to restore state
-		m.State = "restoring"
-		m.SelectedMod = msg.modName
-		
-		// Create a restore model and initialize it
-		restoreModel := NewRestoreModel(msg.modName)
-		return restoreModel, restoreModel.Init()
-		
-	case restoreFinishedMsg:
-		// Handle restore completion
-		if msg.success {
-			m.SuccessMsg = msg.message
-		} else {
-			m.ErrorMsg = msg.message
-		}
-		
-		// Return to main state and refresh mod list
-		m.State = "main"
-		return m, loadMods()
 	}
 	
 	// Different updates based on state
@@ -243,22 +132,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.SearchInput, searchCmd = m.SearchInput.Update(msg)
 		cmd = tea.Batch(cmd, searchCmd)
 		
-		// Apply search filtering
-		searchTerm := m.SearchInput.Value()
-		if previousSearch := m.SearchInput.Value(); searchTerm != previousSearch {
-			// Filter has changed, update the list
-			filtered := filterMods(m.Mods, searchTerm)
-			m.FilteredMods = filtered
-			
-			// Update list items
-			var items []list.Item
-			for _, mod := range filtered {
-				items = append(items, NewModItem(mod))
-			}
-			
-			m.List.SetItems(items)
-		}
-		
+		// Apply search filtering logic here...
 		return m, cmd
 	}
 	
@@ -293,7 +167,7 @@ func renderMain(m Model) string {
 	// Build the header
 	header := styles.TitleStyle.Render("The Sims 4 Mod Manager")
 	header += "\n" + styles.SubtitleStyle.Render("Version control for your Simming adventures!")
-	header += "\n\n" + styles.NormalTextStyle.Render("Press 'q' to quit, 'b' to backup selected mod, 'a' to backup all mods, 'r' to restore")
+	header += "\n\n" + styles.NormalTextStyle.Render("Press 'q' to quit, arrow keys to navigate")
 	
 	// Build the search input
 	search := "\n\n  🔍 " + m.SearchInput.View()
