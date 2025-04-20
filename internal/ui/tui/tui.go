@@ -197,7 +197,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		
 		// Return to main state and refresh mod list
 		m.State = "main"
-		return m, loadMods()()
+		return m, loadMods()
 	}
 	
 	// Different updates based on state
