@@ -1,5 +1,3 @@
-package tui
-
 import (
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/spinner"
@@ -143,13 +141,28 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			items = append(items, NewModItem(mod))
 		}
 		
-		// Create a new list
-		l := list.New(items, list.NewDefaultDelegate(), 0, 0)
+		// Create a custom delegate with better styling
+		delegate := list.NewDefaultDelegate()
+		delegate.Styles.SelectedTitle = delegate.Styles.SelectedTitle.
+			Background(styles.PlumbobColor).
+			Foreground(lipgloss.Color("#ffffff")).
+			Bold(true)
+		delegate.Styles.SelectedDesc = delegate.Styles.SelectedDesc.
+			Background(styles.PlumbobColor).
+			Foreground(lipgloss.Color("#ffffff"))
+			
+		// Create a new list with the custom delegate
+		l := list.New(items, delegate, 0, 0)
 		l.Title = "Your Sims 4 Mods"
-		l.SetShowStatusBar(false)
+		l.SetShowStatusBar(true)
 		l.SetFilteringEnabled(false)
 		l.Styles.Title = styles.TitleStyle
 		l.Styles.NoItems = styles.NormalTextStyle
+		
+		// Set proper height to ensure items are visible
+		l.SetHeight(20) // Give ample space for list items
+		l.SetShowHelp(true) // Show navigation help
+		l.SetShowPagination(true) // Show pagination indicator
 		
 		m.List = l
 		m.State = "main"
@@ -246,6 +259,126 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	
 	return m, cmd
 }
+		
+	case modsLoadedMsg:
+		if msg.err != nil {
+			m.ErrorMsg = msg.err.Error()
+			m.State = "error"
+			return m, nil
+		}
+		
+		m.Mods = msg.mods
+		m.FilteredMods = msg.mods
+		
+		// Initialize the list with mods
+		var items []list.Item
+		for _, mod := range msg.mods {
+			items = append(items, NewModItem(mod))
+		}
+		
+		// Create a new list
+		l := list.New(items, list.NewDefaultDelegate(), 0, 0)
+		l.Title = "Your Sims 4 Mods"
+		l.SetShowStatusBar(false)
+		l.SetFilteringEnabled(false)
+		l.Styles.Title = styles.TitleStyle
+		l.Styles.NoItems = styles.NormalTextStyle
+		
+		m.List = l
+		m.State = "main"
+		return m, nil
+		
+	case backupStartMsg:
+		// Switch to backup state
+		m.State = "backing-up"
+		m.SelectedMod = msg.modName
+		
+		// Create a backup model and initialize it
+		backupModel := NewBackupModel(msg.modName)
+		return backupModel, backupModel.Init()
+		
+	case backupFinishedMsg:
+		// Handle backup completion
+		if msg.success {
+			m.SuccessMsg = msg.message
+		} else {
+			m.ErrorMsg = msg.message
+		}
+		
+		// Return to main state
+		m.State = "main"
+		return m, nil
+		
+	case restoreStartMsg:
+		// Switch to restore state
+		m.State = "restoring"
+		m.SelectedMod = msg.modName
+		
+		// Create a restore model and initialize it
+		restoreModel := NewRestoreModel(msg.modName)
+		return restoreModel, restoreModel.Init()
+		
+	case restoreFinishedMsg:
+		// Handle restore completion
+		if msg.success {
+			m.SuccessMsg = msg.message
+		} else {
+			m.ErrorMsg = msg.message
+		}
+		
+		// Return to main state and refresh mod list
+		m.State = "main"
+		return m, loadMods()()
+	}
+	
+	// Different updates based on state
+	switch m.State {
+	case "loading":
+		// Update the spinner
+		var spinnerCmd tea.Cmd
+		m.Spinner, spinnerCmd = m.Spinner.Update(msg)
+		return m, spinnerCmd
+		
+	case "main":
+		// Update the list
+		var listCmd tea.Cmd
+		m.List, listCmd = m.List.Update(msg)
+		cmd = listCmd
+		
+		// Handle search input
+		var searchCmd tea.Cmd
+		m.SearchInput, searchCmd = m.SearchInput.Update(msg)
+		cmd = tea.Batch(cmd, searchCmd)
+		
+		// Apply search filtering
+		searchTerm := m.SearchInput.Value()
+		if searchTerm != "" {
+			// Filter has changed, update the list
+			filtered := filterMods(m.Mods, searchTerm)
+			m.FilteredMods = filtered
+			
+			// Update list items
+			var items []list.Item
+			for _, mod := range filtered {
+				items = append(items, NewModItem(mod))
+			}
+			
+			m.List.SetItems(items)
+		} else if len(m.FilteredMods) != len(m.Mods) {
+			// Reset to full list if search is cleared
+			m.FilteredMods = m.Mods
+			var items []list.Item
+			for _, mod := range m.Mods {
+				items = append(items, NewModItem(mod))
+			}
+			m.List.SetItems(items)
+		}
+		
+		return m, cmd
+	}
+	
+	return m, cmd
+}
 
 // View renders the current UI based on the model
 func (m Model) View() string {
@@ -271,20 +404,26 @@ func renderError(m Model) string {
 	return "\n  " + m.ErrorMsg + "\n\n  Press any key to quit.\n"
 }
 
-func renderMain(m Model) string {
-	// Build the header
+// Helper function to render the header consistently
+func renderHeader() string {
 	header := styles.TitleStyle.Render("The Sims 4 Mod Manager")
 	header += "\n" + styles.SubtitleStyle.Render("Version control for your Simming adventures!")
 	header += "\n\n" + styles.NormalTextStyle.Render("Press 'q' to quit, 'b' to backup selected mod, 'a' to backup all mods, 'r' to restore")
+	return header
+}
+
+func renderMain(m Model) string {
+	// Build the header
+	header := renderHeader()
 	
 	// Build the search input
 	search := "\n\n  🔍 " + m.SearchInput.View()
 	
 	// Build the main content
-	content := "\n\n" + m.List.View()
+	content := "\n" + m.List.View()
 	
 	// Build the footer with messages
-	footer := "\n\n"
+	footer := "\n"
 	if m.ErrorMsg != "" {
 		footer += lipgloss.NewStyle().Foreground(lipgloss.Color("#ff0000")).Render("  " + m.ErrorMsg)
 	}
@@ -293,4 +432,4 @@ func renderMain(m Model) string {
 	}
 	
 	return header + search + content + footer
-}
+} + search + content + footer
