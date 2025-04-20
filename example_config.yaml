@@ -1,0 +1,12 @@
+# Example configuration for Sims 4 Mod Manager
+# Copy this to ~/.sims4_mod_manager/config.yaml or ./config.yaml
+
+# Path to The Sims 4 mods directory
+# Windows default: C:\Users\<username>\Documents\Electronic Arts\The Sims 4\Mods
+# macOS default: /Users/<username>/Documents/Electronic Arts/The Sims 4/Mods
+# Linux default: ~/Documents/Electronic Arts/The Sims 4/Mods
+SimsModsPath: "C:\\Users\\username\\Documents\\Electronic Arts\\The Sims 4\\Mods"
+
+# Path to store mod backups
+# Default: ~/.sims4_mod_manager
+ModStoragePath: "C:\\Users\\username\\.sims4_mod_manager"
