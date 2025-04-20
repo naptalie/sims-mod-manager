@@ -1,3 +1,39 @@
+package tui
+
+import (
+	"strings"
+
+	"github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/bubbles/spinner"
+	"github.com/charmbracelet/bubbles/textinput"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+
+	"github.com/yourusername/sims4-mod-manager/internal/models"
+	"github.com/yourusername/sims4-mod-manager/internal/ui/styles"
+)
+
+// Model represents the application state for the TUI
+type Model struct {
+	State         string
+	List          list.Model
+	Spinner       spinner.Model
+	TextInput     textinput.Model
+	Mods          []models.Mod
+	SelectedMod   string
+	Versions      []string
+	ErrorMsg      string
+	SuccessMsg    string
+	SearchInput   textinput.Model
+	FilteredMods  []models.Mod
+}
+
+// Custom message types
+type modsLoadedMsg struct {
+	mods []models.Mod
+	err  error
+}
+
 // Update handles all the standard bubble tea update things
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
@@ -33,43 +69,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case modsLoadedMsg:
 		if msg.err != nil {
 			m.ErrorMsg = msg.err.Error()
-			package tui
-	
 		}
 	}
-}
-
-import (
-	"strings"
-	"github.com/charmbracelet/bubbles/list"
-	"github.com/charmbracelet/bubbles/spinner"
-	"github.com/charmbracelet/bubbles/textinput"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
-
-	"github.com/naptalie/sims4-mod-manager/internal/models"
-	"github.com/naptalie/sims4-mod-manager/internal/ui/styles"
-)
-
-// Model represents the application state for the TUI
-type Model struct {
-	State         string
-	List          list.Model
-	Spinner       spinner.Model
-	TextInput     textinput.Model
-	Mods          []models.Mod
-	SelectedMod   string
-	Versions      []string
-	ErrorMsg      string
-	SuccessMsg    string
-	SearchInput   textinput.Model
-	FilteredMods  []models.Mod
-}
-
-// Custom message types
-type modsLoadedMsg struct {
-	mods []models.Mod
-	err  error
 }
 
 // NewMainModel creates a new main model ready to load mods
