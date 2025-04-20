@@ -1,3 +1,5 @@
+package tui
+
 import (
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/spinner"
