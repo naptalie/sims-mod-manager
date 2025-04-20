@@ -34,45 +34,6 @@ type modsLoadedMsg struct {
 	err  error
 }
 
-// Update handles all the standard bubble tea update things
-func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmd tea.Cmd
-	
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "ctrl+c", "q":
-			return m, tea.Quit
-		case "esc":
-			if m.State != "main" {
-				m.State = "main"
-				m.ErrorMsg = ""
-				m.SuccessMsg = ""
-				return m, cmd
-			}
-		case "b":
-			// Only respond to 'b' key in main view
-			if m.State == "main" {
-				// Get currently selected mod, if any
-				selectedItem := m.List.SelectedItem()
-				if selectedItem != nil {
-					modItem, ok := selectedItem.(ModItem)
-					if ok {
-						m.SelectedMod = modItem.mod.Name
-						// Start backup process for selected mod
-						return m, startBackup(m.SelectedMod)
-					}
-				}
-			}
-		}
-		
-	case modsLoadedMsg:
-		if msg.err != nil {
-			m.ErrorMsg = msg.err.Error()
-		}
-	}
-}
-
 // NewMainModel creates a new main model ready to load mods
 func NewMainModel() (Model, tea.Cmd) {
 	// Create a spinner
